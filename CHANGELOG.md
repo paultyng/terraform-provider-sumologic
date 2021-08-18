@@ -2,7 +2,7 @@
 
 FEATURES:
 
-* Add a new optional field `evaluation_delay` to resource/sumologic_monitor.
+* **New Resource:** sumologic_hierarchy (GH-260)
 
 ## 2.9.9 (August 12, 2021)
 
