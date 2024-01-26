@@ -6,7 +6,6 @@ BUG FIXES:
 * Added error handler to log failed request with correct Error code in response. (GH-610)
 * Uses the recently added API support for `rule_ids` for CSE Rule Tuning Expressions to fix the resource import functionality. (GH-612)
 
-
 ## 2.28.1 (January 19, 2024)
 
 ENHANCEMENTS:
