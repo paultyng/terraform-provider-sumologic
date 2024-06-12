@@ -6,6 +6,57 @@ import (
 	"strings"
 )
 
+type ListPartitionResp struct {
+	Data []Partition `json:"data"`
+	Next string      `json:"next"`
+}
+
+func (s *ListPartitionResp) Reset() {
+	s.Data = nil
+	s.Next = ""
+}
+
+func (s *Client) ListPartitions() ([]Partition, error) {
+	var listPartitionResp ListPartitionResp
+
+	data, _, err := s.Get("v1/partitions?limit=1000")
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(data, &listPartitionResp)
+	if err != nil {
+		return nil, err
+	}
+
+	spartitions := listPartitionResp.Data
+
+	for listPartitionResp.Next != "" {
+		data, _, err = s.Get("v1/partitions?token=" + listPartitionResp.Next)
+		if err != nil {
+			return nil, err
+		}
+
+		listPartitionResp.Reset()
+
+		err = json.Unmarshal(data, &listPartitionResp)
+		if err != nil {
+			return nil, err
+		}
+
+		spartitions = append(spartitions, listPartitionResp.Data...)
+	}
+
+	var activePartitions []Partition
+	for _, partition := range spartitions {
+		if partition.IsActive {
+			activePartitions = append(activePartitions, partition)
+		}
+	}
+
+	return activePartitions, nil
+}
+
 func (s *Client) GetPartition(id string) (*Partition, error) {
 	data, _, err := s.Get(fmt.Sprintf("v1/partitions/%s", id))
 	if err != nil {
@@ -26,7 +77,7 @@ func (s *Client) GetPartition(id string) (*Partition, error) {
 	err = json.Unmarshal(data, &spartition)
 	if err != nil {
 		return nil, err
-	} else if spartition.IsActive == false {
+	} else if !spartition.IsActive {
 		return nil, nil
 	}
 
@@ -70,7 +121,7 @@ type Partition struct {
 	AnalyticsTier                    string `json:"analyticsTier"`
 	RetentionPeriod                  int    `json:"retentionPeriod"`
 	IsCompliant                      bool   `json:"isCompliant"`
-	DataForwardingId                 string `json:"dataForwardingId"`
+	DataForwardingID                 string `json:"dataForwardingId"`
 	IsActive                         bool   `json:"isActive"`
 	TotalBytes                       int    `json:"totalBytes"`
 	IndexType                        string `json:"indexType"`
