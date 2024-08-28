@@ -103,6 +103,7 @@ func TestAccSumologicSCELogMapping_update(t *testing.T) {
 		}
 
 	uName := "Changed Name"
+	uSkippedValue := ""
 	resourceName := "sumologic_cse_log_mapping.log_mapping"
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -118,10 +119,10 @@ func TestAccSumologicSCELogMapping_update(t *testing.T) {
 				),
 			},
 			{
-				Config: testCreateCSELogMappingConfig(uName, lmRecordType, lmEnabled, lmRelatesEntities, lmSkippedValue, lmField, lmLookUp, lmStructuredInputsFields, lmProduct, lmVendor),
+				Config: testCreateCSELogMappingConfig(uName, lmRecordType, lmEnabled, lmRelatesEntities, uSkippedValue, lmField, lmLookUp, lmStructuredInputsFields, lmProduct, lmVendor),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckCSELogMappingExists(resourceName, &logMapping),
-					testCheckLogMappingValues(&logMapping, uName, lmRecordType, lmEnabled, lmRelatesEntities, lmSkippedValue, lmField, lmLookUp, lmStructuredInputsFields, lmProduct, lmVendor),
+					testCheckLogMappingValues(&logMapping, uName, lmRecordType, lmEnabled, lmRelatesEntities, uSkippedValue, lmField, lmLookUp, lmStructuredInputsFields, lmProduct, lmVendor),
 				),
 			},
 		},
@@ -153,6 +154,12 @@ func testAccCSELogMappingDestroy(s *terraform.State) error {
 
 func testCreateCSELogMappingConfig(lmName string, lmRecordType string, lmEnabled bool, lmRelatesEntities bool, lmSkippedValues string, lmField CSELogMappingField, lmLookUp CSELogMappingLookUp, lmStructuredInputsFields CSELogMappingStructuredInputField, lmProduct string, lmVendor string) string {
 
+	fmtSkippedValues := "[]"
+
+	if lmSkippedValues != "" {
+		fmtSkippedValues = fmt.Sprintf("[\"%s\"]", lmSkippedValues)
+	}
+
 	resource := fmt.Sprintf(`
 
 data "sumologic_cse_log_mapping_vendor_product" "web_gateway" {
@@ -166,7 +173,7 @@ resource "sumologic_cse_log_mapping" "log_mapping" {
 	record_type = "%s"
 	enabled = "%t"
 	relates_entities = "%t"
-	skipped_values = ["%s"]
+	skipped_values = %s
 	fields {
 			name = "%s"
 			value = "%s"
@@ -197,7 +204,7 @@ resource "sumologic_cse_log_mapping" "log_mapping" {
 
 
 
-`, lmProduct, lmVendor, lmName, lmRecordType, lmEnabled, lmRelatesEntities, lmSkippedValues,
+`, lmProduct, lmVendor, lmName, lmRecordType, lmEnabled, lmRelatesEntities, fmtSkippedValues,
 		lmField.Name, lmField.Value, lmField.ValueType, lmField.SkippedValues[0], lmField.DefaultValue, lmField.Format, lmField.CaseInsensitive, lmField.AlternateValues[0], lmField.TimeZone, lmField.SplitDelimiter, lmField.SplitIndex, lmField.FieldJoin[0], lmField.JoinDelimiter, lmField.FormatParameters[0],
 		lmLookUp.Key, lmLookUp.Value,
 		lmStructuredInputsFields.EventIdPattern, lmStructuredInputsFields.LogFormat)
@@ -242,7 +249,7 @@ func testCheckLogMappingValues(logMapping *CSELogMapping, lmName string, lmRecor
 		if logMapping.RelatesEntities != lmRelatesEntities {
 			return fmt.Errorf("bad relatesEntities flag, expected \"%t\", got: %#v", lmRelatesEntities, logMapping.RelatesEntities)
 		}
-		if logMapping.SkippedValues[0] != lmSkippedValues {
+		if lmSkippedValues == "" && len(logMapping.SkippedValues) > 0 || lmSkippedValues != logMapping.SkippedValues[0] {
 			return fmt.Errorf("bad skippedValues, expected \"%s\", got: %#v", lmSkippedValues, logMapping.SkippedValues[0])
 		}
 
