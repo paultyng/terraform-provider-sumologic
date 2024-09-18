@@ -1,6 +1,6 @@
 package sumologic
 
-/* TODO: Will add these test cases back when issue with bucket permissions is resolved.
+/* TODO: Will add these test cases back when issue with bucket and ARN permissions is resolved.
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
